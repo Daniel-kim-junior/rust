@@ -1,4 +1,6 @@
 use sha2::{Sha256, Digest};
+
+use crate::transaction::{Transaction};
 pub const INCOMPLETE_HASH: &str = "INCOMPLETE";
 pub const DIFFICULTY_PREFIX: &str = "0000"; // Example difficulty prefix for mining
 pub const GENESIS_BLOCK_INDEX: u64 = 0;
@@ -10,19 +12,19 @@ pub struct Block {
   pub index: u64,
   pub previous_hash: String,
   pub timestamp: u128,
-  pub data: String,
+  pub transactions: Vec<Transaction>,
   pub nonce: u64,
   pub hash: String,
 }
 
 
 impl Block {
-    pub fn new(index: u64, previous_hash: String, data: String, timestamp: u128) -> Self {
+    pub fn new(index: u64, previous_hash: String, transactions: Vec<Transaction> ,timestamp: u128) -> Self {
      Self {
         index,
         previous_hash,
         timestamp,
-        data,
+        transactions,
         nonce: 0,
         hash: INCOMPLETE_HASH.to_string(),
       }
@@ -30,7 +32,7 @@ impl Block {
     
     pub fn mine(&mut self, difficulty_prefix: &str) {
       loop {
-        let hash = Block::calculate_hash(self.index, &self.previous_hash, self.timestamp, &self.data, self.nonce);
+        let hash = Block::calculate_hash(self.index, &self.previous_hash, self.timestamp, &self.transactions, self.nonce);
         if hash.starts_with(difficulty_prefix) {
           self.hash = hash;
           break;
@@ -49,21 +51,23 @@ impl Block {
       }
 
 
-      let Block { index, previous_hash, timestamp, data, nonce, hash} = self;
-      let calculated_hash = Block::calculate_hash(*index, previous_hash, *timestamp, data, *nonce);
+      let Block { index, previous_hash, timestamp, transactions, nonce, hash} = self;
+      let calculated_hash = Block::calculate_hash(*index, previous_hash, *timestamp, transactions, *nonce);
      
       calculated_hash == *hash
 
     }
 
 
-    pub fn calculate_hash(index: u64, previous_hash: &str, timestamp: u128, data: &str, nonce: u64) -> String {
+    pub fn calculate_hash(index: u64, previous_hash: &str, timestamp: u128, transactions: &[Transaction], nonce: u64) -> String {
+      let tx_data: String = transactions.iter()
+      .map(|tx| format!("{}->{}:{}", tx.from, tx.to, tx.amount))
+      .collect();
+      let content: String = format!("{}{}{}{}{}", index, previous_hash, timestamp, tx_data, nonce);
+
+
       let mut hasher = Sha256::new();
-      hasher.update(index.to_string());
-      hasher.update(previous_hash);
-      hasher.update(timestamp.to_string());
-      hasher.update(data);
-      hasher.update(nonce.to_string());
+      hasher.update(content.as_bytes());
       let result = hasher.finalize();
       hex::encode(result)
     }
