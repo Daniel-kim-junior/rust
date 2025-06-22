@@ -1,6 +1,9 @@
 use sha2::{Sha256, Digest};
 pub const INCOMPLETE_HASH: &str = "INCOMPLETE";
 pub const DIFFICULTY_PREFIX: &str = "0000"; // Example difficulty prefix for mining
+pub const GENESIS_BLOCK_INDEX: u64 = 0;
+pub const GENESIS_BLOCK_PREVIOUS_HASH: &str = "0"; // Previous hash for the genesis block
+pub const GENESIS_BLOCK_DATA: &str = "Genesis Block";
 
 #[derive(Debug, Clone)]
 pub struct Block {
